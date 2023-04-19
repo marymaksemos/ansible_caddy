@@ -1,0 +1,118 @@
+
+   - name: Update apt repo and cache on all ubuntu
+     apt:
+        update_cache: true
+        cache_valid_time: 3600
+        force_apt_get: true
+
+
+   - name: Download Prometheus release package
+     get_url:
+       url: "https://github.com/prometheus/prometheus/releases/download/v2.43.0/prometheus-2.43.0.linux-amd64.tar.gz"
+       dest: "/tmp/prometheus-2.43.0.linux-amd64.tar.gz"
+    
+   - name: Extract Prometheus release package and change directory
+     unarchive:
+      src: "/tmp/prometheus-2.43.0.linux-amd64.tar.gz"
+      dest: "/opt"
+      copy: false
+     
+   - name: Change to extracted directory
+     become: true
+     shell: cd /opt/prometheus-* 
+
+
+   - name: Install Prometheus
+     apt:
+        name: prometheus
+        state: latest
+
+   - name: Create Prometheus systemd unit file
+     template:
+        src: promethus.service.j2
+        dest: /etc/systemd/system/prometheus.service
+        owner: root
+        group: root
+        mode: "0644"
+
+   - name: Reload systemd 
+     systemd:
+        daemon_reload: yes
+
+   - name: Enable and start Prometheus service
+     systemd:
+        name: prometheus
+        enabled: yes
+        state: started    
+
+   - name: Konfigurera Prometheus
+     blockinfile:
+        path: /etc/prometheus/prometheus.yml
+        block: |
+
+          scrape_configs:
+            - job_name: 'prometheus'
+              scrape_interval: 5s
+              static_configs:
+                - targets: ['localhost:9090']
+     notify: Restart Prometheus
+
+   
+   - name: Set up firewall
+     ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+     with_items:
+       - 80
+       - 443
+       - 10050
+       - 10051   
+    
+   - name: reload_prometheus
+     uri:
+        url: http://localhost:9090/-/reload
+        method: POST
+        status_code: 403
+
+   - name: Install adduser and libfontconfig1
+     apt:
+      name:
+        - adduser
+        - libfontconfig1
+      state: present
+      update_cache: yes
+
+   - name: Download Grafana Enterprise package
+     get_url:
+      url: "https://dl.grafana.com/enterprise/release/grafana-enterprise_9.4.7_amd64.deb"
+      dest: "/tmp/grafana-enterprise_9.4.7_amd64.deb"
+
+   - name: Install Grafana Enterprise package
+     apt:
+      deb: "/tmp/grafana-enterprise_9.4.7_amd64.deb"
+      state: present
+
+   - name: Konfigurera Grafana
+     blockinfile:
+        path: /etc/grafana/grafana.ini
+        block: |  
+
+          [server]
+          http_addr = 127.0.0.1
+     notify: Restart Grafana 
+
+   
+
+
+   - name: Start Grafana
+     service:
+        name: grafana-server
+        state: started
+        enabled: yes
+    
+
+
+
+
+

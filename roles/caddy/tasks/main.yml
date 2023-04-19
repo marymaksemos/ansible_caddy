@@ -1,0 +1,37 @@
+- name: Install Caddy PPA
+  apt_repository:
+    repo: 'deb [trusted=yes] https://apt.fury.io/caddy/ /'
+    state: present
+    update_cache: yes
+
+- name: Install Caddy
+  apt:
+    name: caddy
+    state: present
+    update_cache: yes
+
+- name: Start Caddy Service
+  systemd:
+    name: caddy
+    state: started
+    enabled: yes
+     
+- name: Create Caddyfile.j2
+  template:
+    src: Caddyfile.j2
+    dest: /etc/caddy/Caddyfile
+  notify: Restart Caddy Service
+
+
+
+- name: Set up firewall
+  ufw:
+   rule: allow
+   port: "{{ item }}"
+   proto: tcp
+  with_items:
+       - 80
+       - 443
+       - 10050
+       - 10051      
+       - 22

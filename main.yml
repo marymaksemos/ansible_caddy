@@ -1,0 +1,50 @@
+- hosts: all
+  become: true
+
+  vars:
+    ip: 95.217.240.5
+    prometheus_version: "2.30.1"
+    prometheus_user: "prometheus"
+    prometheus_group: "prometheus"
+    prometheus_data_dir: "/var/lib/prometheus"
+    prometheus_config_file: "/etc/prometheus/prometheus.yml"
+    prometheus_flags: ""
+    domain_name:  static.5.240.217.95.clients.your-server.de
+    webroot_path: /var/www/{{ domain_name }}
+    acme_cf_key: "{{ lookup('env', 'CF_Key') }}"
+    acme_cf_email: "{{ lookup('env', 'CF_Email') }}"
+    CLOUDFLARE_API_TOKEN: "4Jyxk1JlAmzVulMzSaUKrZmPIbXFHd3D"
+
+  roles:
+    - role: promethus
+    - role: caddy
+    - role: website
+    - role: tls
+   
+  handlers:
+    - name: restart caddy
+      systemd:
+        name: caddy
+        state: restarted  
+
+    - name: Restart Prometheus
+      systemd:
+        name: prometheus
+        state: restarted
+
+    - name: Restart Grafana
+      systemd:
+        name: grafana-server
+        state: restarted     
+
+- name: Validate website 
+  hosts: myserver
+  tasks:
+    - name: Check that the website is up and running
+      uri:
+        url: "https://{{ ip:82 }}"
+        return_content: yes
+        validate_certs: no
+      register: result
+
+    

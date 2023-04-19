@@ -1,0 +1,12 @@
+- name: Create website directory
+  file:
+    path: /var/www/html/{{ domain_name }}
+    state: directory
+
+- name: Create index.html file
+  template:
+    src: index.html.j2
+    dest: /var/www/html/{{ domain_name }}/index.html
+      
+# - name: Start HTTP server
+#   command: python3 -m http.server --bind {{ ip }} 82

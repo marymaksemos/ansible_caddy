@@ -1,0 +1,11 @@
+
+- name: Install acme.sh
+  shell: curl https://get.acme.sh | sh
+
+- name: Obtain Let's Encrypt TLS certificate
+  command: >
+    /opt/acme.sh/acme.sh --issue \
+    --dns dns_cf \
+    -d {{ domain_name }} \
+    --webroot "{{ webroot_path }}" \
+    --debug

@@ -1,0 +1,7 @@
+static.5.240.217.95.clients.your-server.de {
+            tls {
+              dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+            }
+            reverse_proxy /prometheus localhost:9090
+            reverse_proxy /grafana localhost:3000
+          }
